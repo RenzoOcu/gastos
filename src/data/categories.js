@@ -41,3 +41,10 @@ export const getAllCategories = () => ({
   expense: EXPENSE_CATEGORIES,
   income: INCOME_CATEGORIES
 })
+
+// Función para obtener el ícono de una categoría por su nombre
+export const getCategoryIconByName = (categoryName, type = 'expense') => {
+  const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES
+  const category = categories.find(cat => cat.name === categoryName)
+  return category ? category.icon : '📦'
+}
