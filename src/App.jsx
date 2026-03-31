@@ -526,10 +526,14 @@ function App() {
             <div className="chart-container trend-chart">
               <div className="chart-header">
                 <div className="chart-title-section">
-                  <h3>📈 Tendencia de Gastos</h3>
+                  <h3>📈 Tendencia de Ingresos y Gastos</h3>
                   <span className="chart-subtitle">Últimos 6 meses</span>
                 </div>
                 <div className="chart-legend">
+                  <span className="legend-item">
+                    <span className="legend-dot income"></span>
+                    Ingresos
+                  </span>
                   <span className="legend-item">
                     <span className="legend-dot expense"></span>
                     Gastos
@@ -545,7 +549,7 @@ function App() {
                         <stop offset="95%" stopColor="#ea4335" stopOpacity={0.05}/>
                       </linearGradient>
                       <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#34a853" stopOpacity={0.3}/>
+                        <stop offset="0%" stopColor="#34a853" stopOpacity={0.4}/>
                         <stop offset="95%" stopColor="#34a853" stopOpacity={0.05}/>
                       </linearGradient>
                       <filter id="glow">
@@ -574,6 +578,26 @@ function App() {
                     />
                     <Area 
                       type="monotone" 
+                      dataKey="ingresos" 
+                      stroke="#34a853" 
+                      strokeWidth={3}
+                      fill="url(#incomeGradient)"
+                      dot={{ 
+                        fill: '#34a853', 
+                        stroke: '#fff', 
+                        strokeWidth: 3,
+                        r: 6 
+                      }}
+                      activeDot={{ 
+                        r: 10, 
+                        fill: '#34a853',
+                        stroke: '#fff',
+                        strokeWidth: 4,
+                        filter: 'url(#glow)'
+                      }}
+                    />
+                    <Area 
+                      type="monotone" 
                       dataKey="gastos" 
                       stroke="#ea4335" 
                       strokeWidth={3}
@@ -597,21 +621,21 @@ function App() {
               </div>
               <div className="chart-stats">
                 <div className="chart-stat">
-                  <span className="stat-label">Promedio mensual</span>
+                  <span className="stat-label">Promedio Ingresos</span>
+                  <span className="stat-value income">
+                    S/. {(stats.monthlyData.reduce((sum, m) => sum + m.ingresos, 0) / stats.monthlyData.length).toFixed(2)}
+                  </span>
+                </div>
+                <div className="chart-stat">
+                  <span className="stat-label">Promedio Gastos</span>
                   <span className="stat-value expense">
                     S/. {(stats.monthlyData.reduce((sum, m) => sum + m.gastos, 0) / stats.monthlyData.length).toFixed(2)}
                   </span>
                 </div>
                 <div className="chart-stat">
-                  <span className="stat-label">Mes más alto</span>
+                  <span className="stat-label">Promedio Ahorro</span>
                   <span className="stat-value">
-                    S/. {Math.max(...stats.monthlyData.map(m => m.gastos)).toFixed(2)}
-                  </span>
-                </div>
-                <div className="chart-stat">
-                  <span className="stat-label">Mes más bajo</span>
-                  <span className="stat-value">
-                    S/. {Math.min(...stats.monthlyData.map(m => m.gastos)).toFixed(2)}
+                    S/. {(stats.monthlyData.reduce((sum, m) => sum + m.ahorro, 0) / stats.monthlyData.length).toFixed(2)}
                   </span>
                 </div>
               </div>
