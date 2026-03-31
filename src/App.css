@@ -2069,6 +2069,26 @@ body {
   }
 }
 
+/* Botón de datos de prueba */
+.btn-test-data {
+  background: transparent;
+  color: var(--google-green);
+  border: 1px solid var(--google-green);
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-test-data:hover {
+  background: var(--google-green);
+  color: white;
+}
+
 /* Botón de diagnóstico */
 .btn-diagnostic {
   background: transparent;
@@ -2214,5 +2234,72 @@ body {
   
   .diagnostic-actions button {
     width: 100%;
+  }
+}
+
+/* Selector de período para gráficos */
+.period-selector {
+  display: flex;
+  gap: 6px;
+  background: var(--google-bg);
+  padding: 6px;
+  border-radius: 8px;
+}
+
+.period-btn {
+  padding: 8px 14px;
+  border: none;
+  background: transparent;
+  color: var(--google-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: var(--transition);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.period-btn:hover {
+  background: var(--google-surface);
+  color: var(--google-text);
+}
+
+.period-btn.active {
+  background: var(--google-blue);
+  color: white;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+}
+
+/* Ajustar layout del header del gráfico */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+/* Responsive para selector de período */
+@media (max-width: 768px) {
+  .chart-header {
+    flex-direction: column;
+  }
+  
+  .period-selector {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .period-btn {
+    padding: 8px 10px;
+    font-size: 0.7rem;
   }
 }

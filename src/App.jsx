@@ -117,9 +117,10 @@ function App() {
     date: format(new Date(), 'yyyy-MM-dd')
   })
   const [filter, setFilter] = useState({
-    month: format(new Date(), 'yyyy-MM'),
+    month: 'all', // Por defecto mostrar todas
     category: 'all'
   })
+  const [trendPeriod, setTrendPeriod] = useState(6) // Período en meses para gráfico de tendencia
   const [activeSection, setActiveSection] = useState('dashboard')
   const [dailyTip, setDailyTip] = useState(DAILY_TIPS[0])
   const [monthlyLimit, setMonthlyLimit] = useState(0)
@@ -153,7 +154,7 @@ function App() {
 
   // Obtener transacciones
   const fetchTransactions = async () => {
-    playSound('click')
+    console.log('📥 Obteniendo transacciones...')
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -161,11 +162,18 @@ function App() {
         .select('*')
         .order('date', { ascending: false })
       
-      if (error) throw error
+      console.log('📥 Resultado:', { data, error, count: data?.length })
+      
+      if (error) {
+        console.error('❌ Error al obtener transacciones:', error)
+        throw error
+      }
+      
+      console.log('✅ Transacciones cargadas:', data?.length || 0)
       setTransactions(data || [])
     } catch (err) {
+      console.error('❌ Error completo:', err)
       setError(err.message)
-      console.error(err)
     } finally {
       setLoading(false)
     }
@@ -201,13 +209,23 @@ function App() {
     setMonthlyLimit(suggestedLimit)
 
     const filtered = transactions.filter(t => {
+      // Filtrar por categoría
+      if (filter.category !== 'all' && t.category !== filter.category) {
+        return false
+      }
+      
+      // Si el mes es 'all', mostrar todas las transacciones
+      if (filter.month === 'all') {
+        return true
+      }
+      
+      // Filtrar por mes específico
       const transactionDate = parseISO(t.date)
       const [year, month] = filter.month.split('-')
       const start = startOfMonth(new Date(year, month - 1))
       const end = endOfMonth(new Date(year, month - 1))
       
-      return isWithinInterval(transactionDate, { start, end }) &&
-        (filter.category === 'all' || t.category === filter.category)
+      return isWithinInterval(transactionDate, { start, end })
     })
 
     const totalIncome = filtered
@@ -234,27 +252,48 @@ function App() {
       value: parseFloat(value.toFixed(2))
     }))
 
-    // Ingresos vs Gastos por mes (últimos 6 meses)
+    // Ingresos vs Gastos por mes (según período seleccionado)
     const monthlyData = []
-    for (let i = 5; i >= 0; i--) {
-      const date = subMonths(today, i)
-      const monthKey = format(date, 'yyyy-MM')
-      const monthName = format(date, 'MMM', { locale: es })
+    const monthsToShow = trendPeriod
+    
+    if (transactions.length > 0) {
+      // Encontrar la fecha más reciente con datos
+      const dates = transactions.map(t => parseISO(t.date))
+      const maxDate = new Date(Math.max(...dates))
       
-      const monthIncome = transactions
-        .filter(t => t.date.startsWith(monthKey) && t.type === 'income')
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-      
-      const monthExpense = transactions
-        .filter(t => t.date.startsWith(monthKey) && t.type === 'expense')
-        .reduce((sum, t) => sum + parseFloat(t.amount), 0)
-      
-      monthlyData.push({
-        month: monthName,
-        ingresos: monthIncome,
-        gastos: monthExpense,
-        ahorro: monthIncome - monthExpense
-      })
+      // Generar los meses hacia atrás desde la fecha más reciente
+      for (let i = monthsToShow - 1; i >= 0; i--) {
+        const date = subMonths(maxDate, i)
+        const monthKey = format(date, 'yyyy-MM')
+        
+        // Nombre completo del mes para pocos meses, abreviado para muchos
+        let monthName
+        if (monthsToShow <= 3) {
+          monthName = format(date, 'MMMM yyyy', { locale: es })
+        } else if (monthsToShow <= 6) {
+          monthName = format(date, 'MMM yyyy', { locale: es })
+        } else if (monthsToShow <= 12) {
+          monthName = format(date, 'MMM yyyy', { locale: es })
+        } else {
+          monthName = format(date, 'MMM yyyy', { locale: es })
+        }
+        
+        const monthIncome = transactions
+          .filter(t => t.date.startsWith(monthKey) && t.type === 'income')
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        
+        const monthExpense = transactions
+          .filter(t => t.date.startsWith(monthKey) && t.type === 'expense')
+          .reduce((sum, t) => sum + parseFloat(t.amount), 0)
+        
+        monthlyData.push({
+          month: monthName,
+          monthKey: monthKey,
+          ingresos: monthIncome,
+          gastos: monthExpense,
+          ahorro: monthIncome - monthExpense
+        })
+      }
     }
 
     // Tendencia de gastos
@@ -281,28 +320,77 @@ function App() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     playSound('click')
+    
+    // Validación simple
+    if (!newTransaction.amount || parseFloat(newTransaction.amount) <= 0) {
+      alert('Por favor ingresa un monto válido mayor a 0')
+      return
+    }
+    
+    if (!newTransaction.category) {
+      alert('Por favor selecciona una categoría')
+      return
+    }
+    
+    if (!newTransaction.date) {
+      alert('Por favor selecciona una fecha')
+      return
+    }
+    
     try {
       // Obtener información completa de la categoría
       const categoryInfo = getCategoryById(newTransaction.category, newTransaction.type)
       
+      // Asegurar que la fecha esté en formato correcto YYYY-MM-DD
+      let dateValue = newTransaction.date
+      if (!dateValue) {
+        dateValue = format(new Date(), 'yyyy-MM-dd')
+      }
+      
+      // Preparar datos para insertar
+      const transactionData = {
+        type: newTransaction.type,
+        amount: parseFloat(newTransaction.amount),
+        category: categoryInfo.name,
+        description: newTransaction.description || 'Sin descripción',
+        date: dateValue
+      }
+      
+      console.log('📤 Enviando transacción:', transactionData)
+      
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          type: newTransaction.type,
-          amount: parseFloat(newTransaction.amount),
-          category: categoryInfo.name,
-          description: newTransaction.description,
-          date: newTransaction.date
-        }])
+        .insert([transactionData])
         .select()
       
-      if (error) throw error
+      if (error) {
+        console.error('❌ Error de Supabase:', error)
+        console.error('Datos que fallaron:', transactionData)
+        throw error
+      }
+      
+      console.log('✅ Transacción insertada:', data)
+      
+      if (error) {
+        console.error('Error de Supabase:', error)
+        throw error
+      }
+      
+      console.log('Transacción insertada:', data)
       
       playSound('success')
       setIsAnimating(true)
       setTimeout(() => setIsAnimating(false), 500)
       
-      setTransactions([data[0], ...transactions])
+      // Actualizar lista de transacciones
+      if (data && data[0]) {
+        setTransactions([data[0], ...transactions])
+      } else {
+        // Si no返回数据, recargar todas
+        await fetchTransactions()
+      }
+      
+      // Resetear formulario
       setNewTransaction({
         type: 'expense',
         amount: '',
@@ -311,10 +399,12 @@ function App() {
         date: format(new Date(), 'yyyy-MM-dd')
       })
       setShowForm(false)
+      
+      alert('✅ Transacción agregada exitosamente')
     } catch (err) {
       playSound('error')
-      console.error('Error al agregar transacción:', err)
-      alert('Error al agregar transacción: ' + err.message)
+      console.error('Error completo:', err)
+      alert('Error al agregar transacción: ' + (err.message || 'Error desconocido'))
     }
   }
 
@@ -330,6 +420,54 @@ function App() {
       console.error('Error en diagnóstico:', err)
     } finally {
       setIsTesting(false)
+    }
+  }
+
+  // Insertar datos de prueba
+  const insertTestData = async () => {
+    playSound('click')
+    console.log('🧪 Insertando datos de prueba...')
+    
+    const testData = [
+      {
+        type: 'income',
+        amount: 5000,
+        category: 'Salario',
+        description: 'Salario de prueba',
+        date: '2025-01-15'
+      },
+      {
+        type: 'expense',
+        amount: 150,
+        category: 'Alimentación',
+        description: 'Supermercado de prueba',
+        date: '2025-01-20'
+      },
+      {
+        type: 'expense',
+        amount: 80,
+        category: 'Transporte',
+        description: 'Gasolina de prueba',
+        date: '2025-01-22'
+      }
+    ]
+    
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert(testData)
+        .select()
+      
+      if (error) throw error
+      
+      console.log('✅ Datos de prueba insertados:', data)
+      alert(`✅ Se insertaron ${data.length} transacciones de prueba`)
+      
+      // Recargar transacciones
+      await fetchTransactions()
+    } catch (err) {
+      console.error('❌ Error al insertar datos de prueba:', err)
+      alert('Error: ' + err.message)
     }
   }
 
@@ -387,6 +525,14 @@ function App() {
           </button>
           <button onMouseEnter={() => playSound('hover')} onClick={fetchTransactions} className="btn-refresh">
             Actualizar
+          </button>
+          <button 
+            onMouseEnter={() => playSound('hover')} 
+            onClick={insertTestData} 
+            className="btn-test-data"
+            title="Insertar datos de prueba"
+          >
+            🧪 Datos Prueba
           </button>
           <button 
             onMouseEnter={() => playSound('hover')} 
@@ -448,11 +594,23 @@ function App() {
           <div className="filters">
             <div className="filter-group">
               <label>Período</label>
-              <input 
-                type="month" 
+              <select 
                 value={filter.month}
                 onChange={(e) => setFilter({...filter, month: e.target.value})}
-              />
+              >
+                <option value="all">📅 Todos los meses</option>
+                {Array.from({length: 12}, (_, i) => {
+                  const date = new Date()
+                  date.setMonth(date.getMonth() - i)
+                  const value = format(date, 'yyyy-MM')
+                  const label = format(date, 'MMMM yyyy', { locale: es })
+                  return (
+                    <option key={value} value={value}>
+                      {label.charAt(0).toUpperCase() + label.slice(1)}
+                    </option>
+                  )
+                })}
+              </select>
             </div>
             <div className="filter-group">
               <label>Categoría</label>
@@ -462,7 +620,7 @@ function App() {
               >
                 {categories.map(cat => (
                   <option key={cat} value={cat}>
-                    {cat === 'all' ? 'Todas' : cat}
+                    {cat === 'all' ? '📁 Todas' : cat}
                   </option>
                 ))}
               </select>
@@ -527,22 +685,58 @@ function App() {
               <div className="chart-header">
                 <div className="chart-title-section">
                   <h3>📈 Tendencia de Ingresos y Gastos</h3>
-                  <span className="chart-subtitle">Últimos 6 meses</span>
+                  <span className="chart-subtitle">
+                    {stats.monthlyData.length > 0 
+                      ? `${stats.monthlyData.length} mes(es) hasta ${stats.monthlyData[stats.monthlyData.length - 1]?.month || ''}`
+                      : 'Selecciona un período'}
+                  </span>
                 </div>
-                <div className="chart-legend">
-                  <span className="legend-item">
-                    <span className="legend-dot income"></span>
-                    Ingresos
-                  </span>
-                  <span className="legend-item">
-                    <span className="legend-dot expense"></span>
-                    Gastos
-                  </span>
+                <div className="period-selector">
+                  <button 
+                    className={`period-btn ${trendPeriod === 1 ? 'active' : ''}`}
+                    onClick={() => setTrendPeriod(1)}
+                  >
+                    1M
+                  </button>
+                  <button 
+                    className={`period-btn ${trendPeriod === 3 ? 'active' : ''}`}
+                    onClick={() => setTrendPeriod(3)}
+                  >
+                    3M
+                  </button>
+                  <button 
+                    className={`period-btn ${trendPeriod === 6 ? 'active' : ''}`}
+                    onClick={() => setTrendPeriod(6)}
+                  >
+                    6M
+                  </button>
+                  <button 
+                    className={`period-btn ${trendPeriod === 12 ? 'active' : ''}`}
+                    onClick={() => setTrendPeriod(12)}
+                  >
+                    1A
+                  </button>
+                  <button 
+                    className={`period-btn ${trendPeriod === 60 ? 'active' : ''}`}
+                    onClick={() => setTrendPeriod(60)}
+                  >
+                    5A
+                  </button>
                 </div>
               </div>
+              <div className="chart-legend">
+                <span className="legend-item">
+                  <span className="legend-dot income"></span>
+                  Ingresos
+                </span>
+                <span className="legend-item">
+                  <span className="legend-dot expense"></span>
+                  Gastos
+                </span>
+              </div>
               <div className="chart-wrapper">
-                <ResponsiveContainer width="100%" height={280}>
-                  <AreaChart data={stats.monthlyData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height={320}>
+                  <AreaChart data={stats.monthlyData} margin={{ top: 20, right: 30, left: 10, bottom: 10 }}>
                     <defs>
                       <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#ea4335" stopOpacity={0.4}/>
@@ -564,8 +758,12 @@ function App() {
                     <XAxis 
                       dataKey="month" 
                       stroke="#5f6368" 
-                      fontSize={12}
+                      fontSize={trendPeriod > 12 ? 10 : 12}
                       tickLine={false}
+                      angle={trendPeriod > 6 ? -45 : 0}
+                      textAnchor={trendPeriod > 6 ? 'end' : 'middle'}
+                      height={trendPeriod > 6 ? 60 : 40}
+                      interval={trendPeriod > 24 ? Math.floor(trendPeriod / 12) : 0}
                     />
                     <YAxis 
                       stroke="#5f6368" 
@@ -718,7 +916,10 @@ function App() {
           <div className="transactions-header">
             <div className="transactions-title">
               <h2>📋 Historial de Transacciones</h2>
-              <span className="transactions-count">{stats.filteredTransactions.length} transacciones</span>
+              <span className="transactions-count">
+                {stats.filteredTransactions.length} de {transactions.length} transacciones
+                {filter.month !== 'all' && ` (filtradas)`}
+              </span>
             </div>
             <button 
               onMouseEnter={() => playSound('hover')} 
@@ -1214,24 +1415,29 @@ function App() {
               </div>
               
               <div className="form-group">
-                <label>Descripción</label>
+                <label>Descripción (opcional)</label>
                 <input 
                   type="text"
                   placeholder="Descripción"
                   value={newTransaction.description}
                   onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})}
-                  required
                 />
               </div>
               
               <div className="form-group">
-                <label>Fecha</label>
+                <label>Fecha *</label>
                 <input 
                   type="date"
                   value={newTransaction.date}
-                  onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})}
+                  onChange={(e) => {
+                    console.log('Fecha seleccionada:', e.target.value)
+                    setNewTransaction({...newTransaction, date: e.target.value})
+                  }}
                   required
                 />
+                <small style={{ color: '#666', fontSize: '12px' }}>
+                  Puedes seleccionar cualquier fecha (pasado, presente o futuro)
+                </small>
               </div>
               
               <div className="form-actions">
