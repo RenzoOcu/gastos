@@ -1,0 +1,317 @@
+/* Voice Chat Styles */
+.voice-chat {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+}
+
+/* Botón flotante */
+.voice-chat-toggle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.4);
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-chat-toggle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(66, 133, 244, 0.5);
+}
+
+.voice-chat.open .voice-chat-toggle {
+  background: linear-gradient(135deg, #ea4335 0%, #c5221f 100%);
+  box-shadow: 0 4px 12px rgba(234, 67, 53, 0.4);
+}
+
+/* Panel del chat */
+.voice-chat-panel {
+  position: absolute;
+  bottom: 80px;
+  right: 0;
+  width: 380px;
+  max-height: 500px;
+  background: var(--google-surface, #ffffff);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.voice-chat-header {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.voice-chat-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.voice-status {
+  font-size: 0.75rem;
+}
+
+.voice-status .listening {
+  color: #ffcccc;
+  animation: pulse 1s infinite;
+}
+
+.voice-status .speaking {
+  color: #ccffcc;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Mensajes */
+.voice-chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 250px;
+  min-height: 200px;
+}
+
+.message {
+  display: flex;
+  max-width: 85%;
+}
+
+.message.user {
+  align-self: flex-end;
+}
+
+.message.assistant {
+  align-self: flex-start;
+}
+
+.message-content {
+  padding: 12px 16px;
+  border-radius: 16px;
+  position: relative;
+}
+
+.message.user .message-content {
+  background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+
+.message.assistant .message-content {
+  background: var(--google-bg, #f8f9fa);
+  color: var(--google-text, #202124);
+  border: 1px solid var(--google-border, #e0e0e0);
+  border-bottom-left-radius: 4px;
+}
+
+.message-content p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.message-time {
+  display: block;
+  font-size: 0.65rem;
+  margin-top: 6px;
+  opacity: 0.7;
+}
+
+.message.user .message-time {
+  text-align: right;
+}
+
+/* Preguntas rápidas */
+.quick-questions {
+  padding: 12px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--google-border, #e0e0e0);
+}
+
+.quick-question-btn {
+  padding: 6px 12px;
+  background: var(--google-blue-light, #e8f0fe);
+  color: var(--google-blue-dark, #1a73e8);
+  border: none;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-question-btn:hover {
+  background: var(--google-blue, #4285f4);
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Controles de voz */
+.voice-controls {
+  padding: 12px 16px;
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--google-border, #e0e0e0);
+}
+
+.voice-btn {
+  flex: 1;
+  padding: 12px;
+  background: var(--google-blue, #4285f4);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.voice-btn:hover:not(:disabled) {
+  background: var(--google-blue-dark, #1a73e8);
+  transform: translateY(-2px);
+}
+
+.voice-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-btn.active {
+  background: var(--google-red, #ea4335);
+  animation: pulse 1s infinite;
+}
+
+.voice-btn.stop {
+  background: var(--google-red, #ea4335);
+}
+
+/* Input de texto */
+.voice-chat-input {
+  padding: 12px 16px;
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid var(--google-border, #e0e0e0);
+}
+
+.voice-chat-input input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--google-border, #e0e0e0);
+  border-radius: 20px;
+  font-size: 0.875rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.voice-chat-input input:focus {
+  border-color: var(--google-blue, #4285f4);
+  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+}
+
+.voice-chat-input button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--google-blue, #4285f4);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-chat-input button:hover:not(:disabled) {
+  background: var(--google-blue-dark, #1a73e8);
+  transform: scale(1.1);
+}
+
+.voice-chat-input button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Hint */
+.voice-chat-hint {
+  padding: 8px 16px 12px;
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--google-text-secondary, #5f6368);
+  margin: 0;
+}
+
+/* Dark mode */
+[data-theme="dark"] .voice-chat-panel {
+  background: #1e1e1e;
+}
+
+[data-theme="dark"] .message.assistant .message-content {
+  background: #2d2d2d;
+  color: #e8eaed;
+  border-color: #3c4043;
+}
+
+[data-theme="dark"] .quick-question-btn {
+  background: rgba(138, 180, 248, 0.2);
+  color: #8ab4f8;
+}
+
+[data-theme="dark"] .quick-question-btn:hover {
+  background: #4285f4;
+  color: white;
+}
+
+[data-theme="dark"] .voice-chat-input input {
+  background: #2d2d2d;
+  color: #e8eaed;
+  border-color: #3c4043;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .voice-chat-panel {
+    width: calc(100vw - 48px);
+    right: -12px;
+    max-height: 450px;
+  }
+}
