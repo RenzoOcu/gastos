@@ -2068,3 +2068,151 @@ body {
     gap: 8px;
   }
 }
+
+/* Botón de diagnóstico */
+.btn-diagnostic {
+  background: transparent;
+  color: var(--google-text-secondary);
+  border: 1px solid var(--google-border);
+  padding: 10px 16px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-diagnostic:hover:not(:disabled) {
+  background: var(--google-yellow);
+  color: #333;
+  border-color: var(--google-yellow);
+}
+
+.btn-diagnostic:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Modal de diagnóstico */
+.diagnostic-modal {
+  max-width: 500px;
+}
+
+.diagnostic-result {
+  padding: 24px;
+  border-radius: 12px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.diagnostic-result.success {
+  background: rgba(52, 168, 83, 0.1);
+  border: 1px solid var(--google-green);
+}
+
+.diagnostic-result.warning {
+  background: rgba(251, 188, 4, 0.1);
+  border: 1px solid var(--google-yellow);
+}
+
+.diagnostic-result.error {
+  background: rgba(234, 67, 53, 0.1);
+  border: 1px solid var(--google-red);
+}
+
+.diagnostic-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.diagnostic-result h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--google-text);
+  margin: 0 0 12px 0;
+}
+
+.diagnostic-result p {
+  color: var(--google-text-secondary);
+  margin: 0 0 16px 0;
+  font-size: 0.875rem;
+}
+
+.diagnostic-solution {
+  background: var(--google-surface);
+  padding: 12px;
+  border-radius: 8px;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.diagnostic-solution strong {
+  color: var(--google-text);
+}
+
+.diagnostic-details {
+  background: var(--google-bg);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.diagnostic-details h4 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--google-text);
+  margin: 0 0 16px 0;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--google-border);
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  color: var(--google-text-secondary);
+}
+
+.detail-value {
+  font-weight: 500;
+}
+
+.detail-value.ok {
+  color: var(--google-green);
+}
+
+.detail-value.error {
+  color: var(--google-red);
+}
+
+.diagnostic-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Responsive para diagnóstico */
+@media (max-width: 480px) {
+  .diagnostic-modal {
+    margin: 16px;
+    width: calc(100% - 32px);
+  }
+  
+  .diagnostic-actions {
+    flex-direction: column;
+  }
+  
+  .diagnostic-actions button {
+    width: 100%;
+  }
+}

@@ -11,6 +11,7 @@ import { useSound } from './hooks/useSound'
 import VoiceChat from './components/VoiceChat'
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES, getCategoryById, getCategoryIconByName } from './data/categories'
 import { logDiagnostics } from './utils/checkConnection'
+import { testSupabaseConnection, getDiagnosticMessage } from './utils/testSupabase'
 import './App.css'
 
 const COLORS = ['#4285f4', '#ea4335', '#fbbc04', '#34a853', '#ff6d01', '#46bdc6']
@@ -104,6 +105,9 @@ function App() {
   const [error, setError] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [showDiagnostic, setShowDiagnostic] = useState(false)
+  const [diagnosticResult, setDiagnosticResult] = useState(null)
+  const [isTesting, setIsTesting] = useState(false)
   const { playSound } = useSound()
   const [newTransaction, setNewTransaction] = useState({
     type: 'expense',
@@ -314,6 +318,21 @@ function App() {
     }
   }
 
+  // Probar conexión a Supabase
+  const runDiagnostic = async () => {
+    playSound('click')
+    setIsTesting(true)
+    try {
+      const results = await testSupabaseConnection()
+      setDiagnosticResult(results)
+      setShowDiagnostic(true)
+    } catch (err) {
+      console.error('Error en diagnóstico:', err)
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
   // Exportar a Excel
   const exportToExcel = () => {
     playSound('success')
@@ -368,6 +387,14 @@ function App() {
           </button>
           <button onMouseEnter={() => playSound('hover')} onClick={fetchTransactions} className="btn-refresh">
             Actualizar
+          </button>
+          <button 
+            onMouseEnter={() => playSound('hover')} 
+            onClick={runDiagnostic} 
+            className="btn-diagnostic"
+            disabled={isTesting}
+          >
+            {isTesting ? '⏳' : '🔧'} {isTesting ? 'Probando...' : 'Diagnosticar'}
           </button>
         </div>
       </header>
@@ -1192,6 +1219,68 @@ function App() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Diagnóstico */}
+      {showDiagnostic && diagnosticResult && (
+        <div className="modal-overlay" onClick={() => setShowDiagnostic(false)}>
+          <div className="modal diagnostic-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🔧 Diagnóstico de Conexión</h2>
+              <button className="modal-close" onClick={() => setShowDiagnostic(false)}>×</button>
+            </div>
+            
+            <div className={`diagnostic-result ${getDiagnosticMessage(diagnosticResult).type}`}>
+              <div className="diagnostic-icon">
+                {getDiagnosticMessage(diagnosticResult).type === 'success' && '✅'}
+                {getDiagnosticMessage(diagnosticResult).type === 'warning' && '⚠️'}
+                {getDiagnosticMessage(diagnosticResult).type === 'error' && '❌'}
+              </div>
+              <h3>{getDiagnosticMessage(diagnosticResult).title}</h3>
+              <p>{getDiagnosticMessage(diagnosticResult).message}</p>
+              <div className="diagnostic-solution">
+                <strong>Solución:</strong> {getDiagnosticMessage(diagnosticResult).solution}
+              </div>
+            </div>
+
+            <div className="diagnostic-details">
+              <h4>Detalles técnicos:</h4>
+              <div className="detail-item">
+                <span className="detail-label">URL configurada:</span>
+                <span className={`detail-value ${diagnosticResult.envVars.url !== 'NO CONFIGURADA' ? 'ok' : 'error'}`}>
+                  {diagnosticResult.envVars.url !== 'NO CONFIGURADA' ? '✅ Sí' : '❌ No'}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">API Key configurada:</span>
+                <span className={`detail-value ${diagnosticResult.envVars.keyExists ? 'ok' : 'error'}`}>
+                  {diagnosticResult.envVars.keyExists ? '✅ Sí' : '❌ No'}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Conexión:</span>
+                <span className={`detail-value ${diagnosticResult.connection ? 'ok' : 'error'}`}>
+                  {diagnosticResult.connection ? '✅ OK' : '❌ Fallida'}
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Tabla existe:</span>
+                <span className={`detail-value ${diagnosticResult.tableExists ? 'ok' : 'error'}`}>
+                  {diagnosticResult.tableExists ? '✅ Sí' : '❌ No'}
+                </span>
+              </div>
+            </div>
+
+            <div className="diagnostic-actions">
+              <button onClick={() => { setShowDiagnostic(false); runDiagnostic() }} className="btn-primary">
+                🔄 Probar de nuevo
+              </button>
+              <button onClick={() => setShowDiagnostic(false)} className="btn-secondary">
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}
